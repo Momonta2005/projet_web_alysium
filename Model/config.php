@@ -26,4 +26,8 @@ class Config {
         }
         return self::$pdo;
     }
+
+    public static function getGeminiKey(): string {
+        return "AIzaSyAswkXpITaaxn2wjNFtPgdn49ltBrbA1mU";
+    }
 }

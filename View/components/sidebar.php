@@ -122,6 +122,15 @@ body.dark-mode .content tr:nth-child(odd) { background-color: #1a1a1a; }
             </svg>
         </a>
 
+        <a href="backoffice_index.php?action=list_flags" 
+           class="nav-item <?php echo ($current_action === 'list_flags') ? 'active' : ''; ?>" 
+           title="Contenus modérés">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9.75 4.75l4.5-1.5a1 1 0 011.25.96v12.58a1 1 0 01-1.34.94l-4.5-1.5a1 1 0 00-.64 0l-4.5 1.5A1 1 0 013 16.79V4.71a1 1 0 011.25-.96l4.5 1.5a1 1 0 00.64 0z"/>
+            </svg>
+        </a>
+
         <div class="nav-item" title="Settings">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

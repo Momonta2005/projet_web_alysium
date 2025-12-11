@@ -74,6 +74,57 @@ $current_sort = $_GET['sort'] ?? 'date_desc';
         .close { position: absolute; top: 10px; right: 20px; font-size: 32px; cursor: pointer; color: #aaa; }
         .close:hover { color: #dc3545; }
         @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+        
+        /* Styles pour l'icône de traduction */
+        .translate-icon {
+            cursor: pointer;
+            font-size: 1.2em;
+            margin-right: 8px;
+            display: inline-block;
+            vertical-align: middle;
+            transition: transform 0.2s;
+        }
+        .translate-icon:hover {
+            transform: scale(1.2);
+        }
+        .translate-menu {
+            display: none;
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 150px;
+            padding: 8px 0;
+            margin-top: 5px;
+        }
+        .translate-menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: block;
+            text-decoration: none;
+            color: #333;
+            transition: background-color 0.2s;
+        }
+        .translate-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+        .translate-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        /* Modale de traduction */
+        .translation-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .translation-modal-content { background-color: #ffffff; margin: 10% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .translation-modal-content h3 { margin-top: 0; color: #007bff; }
+        .translation-result { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #007bff; line-height: 1.6; }
+        .translation-loading { text-align: center; padding: 20px; }
+        .translation-loading::after { content: '...'; animation: dots 1.5s steps(4, end) infinite; }
+        @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60%, 100% { content: '...'; } }
+        .close-translation { float: right; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .close-translation:hover { color: #000; }
     </style>
 </head>
 <body>
@@ -150,7 +201,16 @@ $current_sort = $_GET['sort'] ?? 'date_desc';
                             </div>
                         </td>
                         <td><?php echo htmlspecialchars($eval['stars']); ?></td>
-                        <td style="max-width: 300px;"><?php echo htmlspecialchars(substr($eval['comment'], 0, 80)) . (strlen($eval['comment']) > 80 ? '...' : ''); ?></td>
+                        <td style="max-width: 300px;">
+                            <span class="translate-container">
+                                <span class="translate-icon" onclick="openTranslateMenu(event, '<?php echo htmlspecialchars(addslashes($eval['comment'])); ?>')">🌐</span>
+                                <div class="translate-menu" id="translate-menu-eval-<?php echo $eval['id']; ?>">
+                                    <a href="#" class="translate-menu-item" onclick="translateText(event, '<?php echo htmlspecialchars(addslashes($eval['comment'])); ?>', 'fr')">Français</a>
+                                    <a href="#" class="translate-menu-item" onclick="translateText(event, '<?php echo htmlspecialchars(addslashes($eval['comment'])); ?>', 'en')">English</a>
+                                </div>
+                            </span>
+                            <?php echo htmlspecialchars(substr($eval['comment'], 0, 80)) . (strlen($eval['comment']) > 80 ? '...' : ''); ?>
+                        </td>
                         <td><?php echo htmlspecialchars($eval['author']); ?></td>
                         <td><?php echo date('d/m/Y H:i', strtotime($eval['date_evaluation'])); ?></td>
                         <td>
@@ -193,6 +253,17 @@ $current_sort = $_GET['sort'] ?? 'date_desc';
             <p><strong>Solution associée :</strong><br>
                 <span id="modalSolution" style="background:#e9ecef; padding:12px; border-radius:6px; display:block; margin-top:8px; font-size:0.95em;"></span>
             </p>
+        </div>
+    </div>
+
+    <!-- Modale de traduction -->
+    <div id="translationModal" class="translation-modal">
+        <div class="translation-modal-content">
+            <span class="close-translation" onclick="closeTranslationModal()">&times;</span>
+            <h3>🌐 Traduction</h3>
+            <div id="translationContent">
+                <div class="translation-loading">Traduction en cours</div>
+            </div>
         </div>
     </div>
 
@@ -245,6 +316,117 @@ document.addEventListener('click', () => {
 // Texte du bouton
 const sortTexts = { 'date_desc': 'Plus récent d\'abord', 'date_asc': 'Plus ancien d\'abord' };
 document.getElementById('currentEvalSort').textContent = sortTexts['<?php echo $current_sort; ?>'] || 'Plus récent d\'abord';
+
+// =========================================================
+// Fonctionnalité de traduction
+// =========================================================
+function openTranslateMenu(event, text) {
+    event.stopPropagation();
+    // Fermer tous les autres menus ouverts
+    document.querySelectorAll('.translate-menu').forEach(menu => {
+        menu.style.display = 'none';
+    });
+    // Ouvrir le menu correspondant
+    const menu = event.target.nextElementSibling;
+    if (menu && menu.classList.contains('translate-menu')) {
+        menu.style.display = 'block';
+        // Positionner le menu
+        const rect = event.target.getBoundingClientRect();
+        menu.style.left = '0px';
+        menu.style.top = '100%';
+    }
+}
+
+// Décodage des entités HTML avant envoi à Gemini
+function decodeEntities(str) {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = str;
+    return txt.value;
+}
+
+function translateText(event, text, lang) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Fermer le menu
+    const menu = event.target.closest('.translate-menu');
+    if (menu) {
+        menu.style.display = 'none';
+    }
+    
+    // Nettoyer le texte (entités HTML)
+    const cleanText = decodeEntities(text);
+
+    // Ouvrir la modale de traduction
+    const modal = document.getElementById('translationModal');
+    const content = document.getElementById('translationContent');
+    modal.style.display = 'block';
+    content.innerHTML = '<div class="translation-loading">Traduction en cours</div>';
+    
+    // Appeler l'API de traduction via Gemini
+    const formData = new FormData();
+    formData.append('action', 'translate');
+    formData.append('text', cleanText);
+    formData.append('lang', lang);
+    
+    fetch('backoffice_index.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(rawText => {
+        try {
+            const data = JSON.parse(rawText);
+            if (data.error) {
+                content.innerHTML = '<div style="color: #dc3545; padding: 15px;">Erreur: ' + data.error + '</div>';
+            } else if (data.translated_text) {
+                const langName = lang === 'fr' ? 'Français' : 'English';
+                content.innerHTML = `
+                    <div style="margin-bottom: 10px; color: #666;">
+                        <strong>Langue cible:</strong> ${langName}
+                    </div>
+                    <div class="translation-result">
+                        ${data.translated_text.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            } else {
+                throw new Error('Réponse invalide');
+            }
+        } catch (e) {
+            console.error('Erreur parsing:', e, rawText);
+            content.innerHTML = '<div style="color: #dc3545; padding: 15px;">Erreur lors de la traduction. Veuillez réessayer.</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        content.innerHTML = '<div style="color: #dc3545; padding: 15px;">Erreur de connexion. Veuillez réessayer.</div>';
+    });
+}
+
+function closeTranslationModal() {
+    document.getElementById('translationModal').style.display = 'none';
+}
+
+// Fermer la modale si on clique en dehors
+window.onclick = function(event) {
+    const modal = document.getElementById('translationModal');
+    const readModal = document.getElementById('readModal');
+    if (event.target === modal) {
+        closeTranslationModal();
+    }
+    if (event.target === readModal) {
+        closeModal();
+    }
+}
+
+// Fermer les menus si on clique ailleurs
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.translate-container')) {
+        document.querySelectorAll('.translate-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
 </script>
 
 </body>

@@ -1,4 +1,3 @@
-// Fichier : Model/Signalement.php
 <?php 
 class Signalement {
     private ?int $id; private string $titre; private string $description;
@@ -10,9 +9,3 @@ class Signalement {
     public function getDescription(): string { return $this->description; }
     public function setId(int $id): void { $this->id = $id; }
 }
-
-// Fichier : Model/Solution.php
-// ATTENTION: La balise <?php a été supprimée ici !
-
-// Fichier : Model/Evaluation.php
-// ATTENTION: La balise <?php a été supprimée ici !

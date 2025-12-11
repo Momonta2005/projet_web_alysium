@@ -50,6 +50,7 @@ class SignalementController {
         $sql = "SELECT 
                     S.id AS solution_id, 
                     S.description AS solution_desc, 
+                    E.id AS evaluation_id,
                     E.stars, 
                     E.comment, 
                     E.author 
@@ -74,6 +75,7 @@ class SignalementController {
             }
             if ($row['stars'] !== null) { 
                 $solutions[$s_id]['evaluations'][] = [
+                    'id' => $row['evaluation_id'],
                     'stars' => $row['stars'],
                     'comment' => $row['comment'],
                     'author' => $row['author']

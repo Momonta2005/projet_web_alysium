@@ -2,6 +2,7 @@
 // Fichier : Controller/SolutionController.php
 
 require_once __DIR__ . '/../Model/config.php';
+require_once __DIR__ . '/ModerationController.php';
 
 class SolutionController {
     private PDO $db;
@@ -17,6 +18,20 @@ class SolutionController {
         if (empty(trim($description))) {
             return false;
         }
+
+        // Modération : si contenu interdit, on flag et on ne publie pas
+        $moderation = new ModerationController();
+        $check = ModerationController::moderateText($description);
+        if ($check['flagged']) {
+            $moderation->flagContent(
+                'solution',
+                $description,
+                $check['reason'],
+                ['signalementId' => $signalementId]
+            );
+            return true; // On considère traité même si non publié
+        }
+
         $sql = "INSERT INTO Solution (signalementId, description) VALUES (:sid, :desc)";
         try {
             $query = $this->db->prepare($sql);

@@ -2,6 +2,7 @@
 // Fichier : Controller/EvaluationController.php
 
 require_once __DIR__ . '/../Model/config.php';
+require_once __DIR__ . '/ModerationController.php';
 
 class EvaluationController {
     private PDO $db;
@@ -22,6 +23,19 @@ class EvaluationController {
         $comment = trim(preg_replace('/^(⭐{1,5}\s*-?\s*)/u', '', $evaluationText)) ?: 'Aucun commentaire.';
         
         $author = 'Utilisateur Logué'; 
+
+        // Modération : si commentaire interdit, on flag et on ne publie pas
+        $moderation = new ModerationController();
+        $check = ModerationController::moderateText($comment);
+        if ($check['flagged']) {
+            $moderation->flagContent(
+                'evaluation',
+                $comment,
+                $check['reason'],
+                ['solutionId' => $solutionId]
+            );
+            return true; // Traité mais non publié
+        }
 
         // Requête SQL d'insertion
         $sql = "INSERT INTO Evaluation (solutionId, stars, comment, author) VALUES (:sol_id, :stars, :comment, :author)";
