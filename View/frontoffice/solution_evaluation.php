@@ -28,61 +28,196 @@ function safe(string $text): string {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Signalement #<?php echo safe((string)$signalement->getId()); ?> | Module Solution & Évaluation</title>
     <style>
-        /* Styles CSS inchangés pour le design de la page */
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; }
-        header { background-color: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: flex; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        header h1 { color: #333; margin-top: 0; }
-        header .illustration { margin-left: 20px; flex-shrink: 0; }
-        header .illustration img { max-width: 150px; height: auto; border-radius: 4px; }
-        main section { background-color: #ffffff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .solution-card { border: 1px solid #ddd; padding: 15px; margin-top: 10px; border-radius: 6px; }
-        .solution-card h3 { color: #007bff; margin-top: 0; display: inline-block; }
-        .evaluation-item { background-color: #e9ecef; padding: 8px; margin-top: 5px; border-radius: 4px; font-size: 0.9em; }
-        .evaluation-stars { font-weight: bold; margin-right: 5px; }
-        .evaluation-form, .add-solution form { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-        .evaluation-form input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        .add-solution form textarea, .add-solution form select { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
-        .add-solution form button, .evaluation-form button { background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
-        .resources { display: flex; gap: 10px; margin-top: 10px; }
-        .resource-card { background-color: #e0f7fa; padding: 10px; border-radius: 4px; border: 1px solid #00bcd4; }
+        /* Palette & typo */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        :root {
+            --primary: #0077B6;
+            --purple: #9D4EDD;
+            --violet: #7B2CBF;
+            --cyan: #00B4D8;
+            --bg: #f4f6fb;
+            --card: #ffffff;
+            --text: #1b1b1f;
+            --muted: #60606b;
+            --border: #e2e6f0;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Poppins', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 24px;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--purple));
+            color: #fff;
+            padding: 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+        }
+        header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+        header p { margin: 6px 0 0; color: rgba(255,255,255,0.9); }
+        header .illustration { flex-shrink: 0; }
+        header .illustration img { max-width: 140px; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
+
+        main section {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.05);
+        }
+        h2 { margin: 0 0 10px; font-size: 22px; font-weight: 700; color: var(--primary); }
+        h3 { margin: 6px 0 4px; font-size: 18px; font-weight: 700; color: var(--violet); }
+        h4 { margin: 12px 0 6px; font-size: 16px; font-weight: 600; color: var(--text); }
+        p, label, input, textarea, select { font-size: 16px; }
+
+        .solutions-list { display: grid; gap: 14px; }
+        .solution-card {
+            border: 1px solid var(--border);
+            padding: 16px;
+            border-radius: 12px;
+            background: #fff;
+        }
+        .solution-actions { float: right; display: flex; gap: 8px; }
+        .solution-actions button {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-edit { background: var(--cyan); color: #fff; }
+        .btn-delete { background: #ef476f; color: #fff; }
+
+        .solution-text { color: var(--muted); margin: 4px 0 12px; }
+
+        .evaluation-item {
+            background: #f2f7ff;
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 15px;
+            color: var(--text);
+        }
+        .evaluation-stars { font-weight: 700; margin-right: 6px; color: var(--violet); }
+
+        .evaluation-form, .add-solution form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 14px;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: #fafbff;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+        input[type="text"]:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0,119,182,0.15);
+        }
         
-        /* Styles pour les actions CRUD */
-        .solution-actions { float: right; }
-        .solution-actions button { margin-left: 5px; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        .btn-edit { background-color: #ffc107; color: #333; border: none; }
-        .btn-delete { background-color: #dc3545; color: white; border: none; }
-        
-        /* Styles Modale */
+        /* Système d'étoiles interactif */
+        .star-rating {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .star-rating label {
+            font-size: 32px;
+            color: #ddd;
+            cursor: pointer;
+            transition: transform 0.15s, color 0.15s;
+            user-select: none;
+            line-height: 1;
+            display: inline-block;
+        }
+        .star-rating label:hover {
+            transform: scale(1.15);
+        }
+        .star-rating input[type="radio"] {
+            display: none;
+        }
+        .star-rating label.active {
+            color: #ffc107;
+            text-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+        }
+        .star-rating label.hover-active {
+            color: #ffc107;
+        }
+        .star-rating .star-label {
+            font-size: 14px;
+            color: var(--muted);
+            margin-left: 12px;
+            font-weight: 600;
+        }
+        .add-solution form button, .evaluation-form button, .gemini-input-group button {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+        .add-solution form button:hover, .evaluation-form button:hover, .gemini-input-group button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(0,119,182,0.18);
+        }
+
+        .resources { display: flex; gap: 12px; flex-wrap: wrap; }
+        .resource-card {
+            background: #f0f8ff;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        /* Modale générique */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
-        .modal-content { background-color: #fefefe; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; }
-        .modal-content h2 { margin-top: 0; }
-        
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border: 1px solid var(--border); width: 90%; max-width: 520px; border-radius: 14px; }
+
         /* Modale de traduction */
         .translation-modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
-        .translation-modal-content { background-color: #ffffff; margin: 10% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-        .translation-modal-content h3 { margin-top: 0; color: #007bff; }
-        .translation-result { background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; border-left: 4px solid #007bff; line-height: 1.6; }
-        .translation-loading { text-align: center; padding: 20px; }
+        .translation-modal-content { background-color: #ffffff; margin: 8% auto; padding: 28px; border-radius: 14px; width: 90%; max-width: 620px; box-shadow: 0 16px 38px rgba(0,0,0,0.18); }
+        .translation-modal-content h3 { margin-top: 0; color: var(--primary); }
+        .translation-result { background-color: #f7f9ff; padding: 15px; border-radius: 10px; margin-top: 12px; border-left: 4px solid var(--primary); line-height: 1.6; }
+        .translation-loading { text-align: center; padding: 20px; color: var(--muted); }
         .translation-loading::after { content: '...'; animation: dots 1.5s steps(4, end) infinite; }
         @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60%, 100% { content: '...'; } }
-        .close-translation { float: right; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .close-translation { float: right; font-size: 24px; font-weight: 700; color: #aaa; cursor: pointer; }
         .close-translation:hover { color: #000; }
-        
-        /* Ajustement pour le feedback JS */
-        input[type="text"], textarea { margin-bottom: 15px; }
 
-        /* Gemini Search Bar Styles */
+        /* Gemini */
         .gemini-search-container {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 25px;
+            background: linear-gradient(135deg, var(--purple), var(--violet));
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 20px;
             color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
         }
         .gemini-search-container h2 {
             margin-top: 0;
-            font-size: 1.5rem;
+            font-size: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -91,55 +226,41 @@ function safe(string $text): string {
         .gemini-input-group {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap; /* Pour mobile */
+            flex-wrap: wrap;
         }
         .gemini-input-group input {
             flex-grow: 1;
             padding: 12px;
             border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            font-size: 15px;
         }
         .gemini-input-group button {
-            background-color: #ffecd2;
-            color: #333;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .gemini-input-group button:hover {
-            transform: scale(1.05);
-            background-color: #fff;
+            background: #fff;
+            color: var(--violet);
         }
         .gemini-response {
-            margin-top: 15px;
-            background: rgba(255, 255, 255, 0.95);
-            color: #333;
-            padding: 15px;
-            border-radius: 8px;
-            display: none; /* Masqué par défaut */
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.96);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
             line-height: 1.6;
         }
         .loading-spinner {
             display: inline-block;
             width: 16px;
             height: 16px;
-            border: 3px solid rgba(51, 51, 51, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            border-top-color: #333;
+            border-top-color: #fff;
             animation: spin 1s ease-in-out infinite;
             display: none;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        /* Styles pour l'icône de traduction */
+
+        /* Icônes de traduction */
         .translate-icon {
             cursor: pointer;
             font-size: 1.2em;
@@ -148,18 +269,16 @@ function safe(string $text): string {
             vertical-align: middle;
             transition: transform 0.2s;
         }
-        .translate-icon:hover {
-            transform: scale(1.2);
-        }
+        .translate-icon:hover { transform: scale(1.2); }
         .translate-menu {
             display: none;
             position: absolute;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
             z-index: 1000;
-            min-width: 150px;
+            min-width: 160px;
             padding: 8px 0;
             margin-top: 5px;
         }
@@ -168,16 +287,12 @@ function safe(string $text): string {
             cursor: pointer;
             display: block;
             text-decoration: none;
-            color: #333;
+            color: var(--text);
             transition: background-color 0.2s;
+            font-weight: 600;
         }
-        .translate-menu-item:hover {
-            background-color: #f0f0f0;
-        }
-        .translate-container {
-            position: relative;
-            display: inline-block;
-        }
+        .translate-menu-item:hover { background-color: #f5f7fb; }
+        .translate-container { position: relative; display: inline-block; }
     </style>
 </head>
 <body>
@@ -289,11 +404,27 @@ function safe(string $text): string {
                         <?php endif; ?>
                     </section>
 
-                    <form class="evaluation-form" method="POST" action="frontoffice_index.php?id=<?php echo safe((string)$signalement->getId()); ?>">
+                    <form class="evaluation-form" method="POST" action="frontoffice_index.php?id=<?php echo safe((string)$signalement->getId()); ?>" id="evaluation_form_<?= $solution['id'] ?>">
                         <input type="hidden" name="action" value="add_evaluation">
                         <input type="hidden" name="report_id" value="<?php echo safe((string)$signalement->getId()); ?>">
                         <input type="hidden" name="solution_id" value="<?php echo safe((string)$solution['id']); ?>">
-                        <input type="text" name="evaluation_text" id="evaluation_text_<?= $solution['id'] ?>" placeholder="Votre évaluation (ex : ⭐⭐⭐ - Commentaire)" />
+                        <input type="hidden" name="evaluation_rating" id="evaluation_rating_<?= $solution['id'] ?>" value="0">
+                        
+                        <div class="star-rating" id="star_rating_<?= $solution['id'] ?>">
+                            <input type="radio" id="star5_<?= $solution['id'] ?>" name="star_<?= $solution['id'] ?>" value="5">
+                            <label for="star5_<?= $solution['id'] ?>" onclick="setRating(<?= $solution['id'] ?>, 5)">★</label>
+                            <input type="radio" id="star4_<?= $solution['id'] ?>" name="star_<?= $solution['id'] ?>" value="4">
+                            <label for="star4_<?= $solution['id'] ?>" onclick="setRating(<?= $solution['id'] ?>, 4)">★</label>
+                            <input type="radio" id="star3_<?= $solution['id'] ?>" name="star_<?= $solution['id'] ?>" value="3">
+                            <label for="star3_<?= $solution['id'] ?>" onclick="setRating(<?= $solution['id'] ?>, 3)">★</label>
+                            <input type="radio" id="star2_<?= $solution['id'] ?>" name="star_<?= $solution['id'] ?>" value="2">
+                            <label for="star2_<?= $solution['id'] ?>" onclick="setRating(<?= $solution['id'] ?>, 2)">★</label>
+                            <input type="radio" id="star1_<?= $solution['id'] ?>" name="star_<?= $solution['id'] ?>" value="1">
+                            <label for="star1_<?= $solution['id'] ?>" onclick="setRating(<?= $solution['id'] ?>, 1)">★</label>
+                            <span class="star-label" id="star_label_<?= $solution['id'] ?>">Sélectionnez une note</span>
+                        </div>
+                        
+                        <textarea name="evaluation_comment" id="evaluation_comment_<?= $solution['id'] ?>" rows="3" placeholder="Votre commentaire (obligatoire, minimum 10 caractères)" required></textarea>
                         <button type="submit">Évaluer</button>
                     </form>
                 </article>
@@ -382,32 +513,107 @@ function safe(string $text): string {
         }
 
         // =========================================================
-        // 2. Validation des formulaires d'ajout d'Évaluation
+        // 2. Système d'étoiles interactif
+        // =========================================================
+        function setRating(solutionId, rating) {
+            const ratingInput = document.getElementById('evaluation_rating_' + solutionId);
+            const starLabel = document.getElementById('star_label_' + solutionId);
+            const starLabels = document.querySelectorAll('#star_rating_' + solutionId + ' label');
+            
+            // Mettre à jour la valeur cachée
+            ratingInput.value = rating;
+            
+            // Mettre à jour le label
+            const ratingTexts = ['', 'Très mauvais', 'Mauvais', 'Moyen', 'Bien', 'Excellent'];
+            starLabel.textContent = rating + ' / 5' + (ratingTexts[rating] ? ' - ' + ratingTexts[rating] : '');
+            
+            // Mettre à jour l'apparence des étoiles
+            starLabels.forEach((label, index) => {
+                // index 0 = première étoile (rating 5), index 4 = dernière étoile (rating 1)
+                const starValue = 5 - index;
+                if (starValue <= rating) {
+                    label.classList.add('active');
+                    label.classList.remove('hover-active');
+                } else {
+                    label.classList.remove('active', 'hover-active');
+                }
+            });
+            
+            // Cocher le radio correspondant
+            const radioId = 'star' + rating + '_' + solutionId;
+            document.getElementById(radioId).checked = true;
+        }
+        
+        // Gestion du survol des étoiles
+        document.querySelectorAll('.star-rating').forEach(ratingDiv => {
+            const labels = ratingDiv.querySelectorAll('label');
+            const solutionId = ratingDiv.id.replace('star_rating_', '');
+            
+            labels.forEach((label, index) => {
+                const starValue = 5 - index; // Inverser car les étoiles sont dans l'ordre décroissant
+                
+                // Survol : mettre en surbrillance toutes les étoiles jusqu'à celle survolée
+                label.addEventListener('mouseenter', function() {
+                    labels.forEach((l, idx) => {
+                        const val = 5 - idx;
+                        if (val <= starValue) {
+                            l.classList.add('hover-active');
+                        }
+                    });
+                });
+                
+                // Sortie du survol : retirer la surbrillance sauf celles sélectionnées
+                label.addEventListener('mouseleave', function() {
+                    labels.forEach((l) => {
+                        l.classList.remove('hover-active');
+                    });
+                });
+            });
+        });
+
+        // =========================================================
+        // 3. Validation des formulaires d'ajout d'Évaluation
         // =========================================================
         const evaluationForms = document.querySelectorAll('.evaluation-form');
 
         evaluationForms.forEach(form => {
             form.addEventListener('submit', function(event) {
-                const evaluationInput = this.querySelector('input[name="evaluation_text"]');
-                const text = evaluationInput.value.trim();
-
-                // Regex pour valider le format : étoiles (1 à 5) suivi d'un commentaire d'au moins 10 caractères
-                const regex = /^(⭐{1,5})\s*(-?\s*).{10,}$/u;
+                const solutionId = this.querySelector('input[name="solution_id"]').value;
+                const ratingInput = document.getElementById('evaluation_rating_' + solutionId);
+                const commentInput = document.getElementById('evaluation_comment_' + solutionId);
                 
-                if (!regex.test(text)) {
+                const rating = parseInt(ratingInput.value);
+                const comment = commentInput.value.trim();
+
+                // Validation : au moins une étoile doit être sélectionnée
+                if (rating === 0 || rating < 1 || rating > 5) {
                     event.preventDefault();
-                    // Utilisation de la fonction alert() simple
-                    alert('⚠️ Format invalide. Utilisez 1 à 5 étoiles (ex: ⭐⭐⭐) suivi d\'au moins 10 caractères de commentaire (ex: ⭐⭐⭐ - Très utile.).');
-                    evaluationInput.focus();
+                    alert('⚠️ Veuillez sélectionner une note entre 1 et 5 étoiles.');
                     return false;
                 }
+                
+                // Validation : commentaire obligatoire (au moins 10 caractères)
+                if (comment.length === 0) {
+                    event.preventDefault();
+                    alert('⚠️ Le commentaire est obligatoire. Veuillez saisir votre évaluation.');
+                    commentInput.focus();
+                    return false;
+                }
+                
+                if (comment.length < 10) {
+                    event.preventDefault();
+                    alert('⚠️ Le commentaire doit contenir au moins 10 caractères.');
+                    commentInput.focus();
+                    return false;
+                }
+                
                 return true;
             });
         });
 
 
         // =========================================================
-        // 3. Validation du formulaire de modification (dans la modale)
+        // 4. Validation du formulaire de modification (dans la modale)
         // =========================================================
         const editForm = document.getElementById('editSolutionModal').querySelector('form');
 
@@ -439,7 +645,7 @@ function safe(string $text): string {
         }
 
         // =========================================================
-        // 4. Fonctionnalité de traduction
+        // 5. Fonctionnalité de traduction
         // =========================================================
         function openTranslateMenu(event, text) {
             event.stopPropagation();
@@ -546,7 +752,7 @@ function safe(string $text): string {
         });
         
         // =========================================================
-        // 5. Intégration Gemini
+        // 6. Intégration Gemini
         // =========================================================
         function askGemini() {
             const prompt = document.getElementById('geminiPrompt').value;

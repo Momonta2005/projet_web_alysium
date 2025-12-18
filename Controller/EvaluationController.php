@@ -13,14 +13,27 @@ class EvaluationController {
     
     /**
      * Ajoute une évaluation (note et commentaire) à une solution.
+     * @param int $solutionId L'ID de la solution évaluée
+     * @param int $rating La note (1 à 5)
+     * @param string $comment Le commentaire (optionnel)
+     * @return bool True si l'évaluation a été ajoutée avec succès
      */
-    public function addEvaluation(int $solutionId, string $evaluationText): bool {
-        $evaluationText = trim($evaluationText);
-
-        // Logique métier pour parser l'évaluation
-        $starMatch = preg_match('/^(⭐{1,5})/u', $evaluationText, $matches);
-        $stars = $starMatch ? $matches[1] : '⭐⭐⭐';
-        $comment = trim(preg_replace('/^(⭐{1,5}\s*-?\s*)/u', '', $evaluationText)) ?: 'Aucun commentaire.';
+    public function addEvaluation(int $solutionId, int $rating, string $comment = ''): bool {
+        // Validation de la note
+        if ($rating < 1 || $rating > 5) {
+            error_log("Note invalide: $rating (doit être entre 1 et 5)");
+            return false;
+        }
+        
+        // Conversion de la note numérique en étoiles pour le stockage
+        $stars = str_repeat('⭐', $rating);
+        
+        // Nettoyage et validation du commentaire (obligatoire)
+        $comment = trim($comment);
+        if (empty($comment) || strlen($comment) < 10) {
+            error_log("Commentaire invalide: doit contenir au moins 10 caractères");
+            return false;
+        }
         
         $author = 'Utilisateur Logué'; 
 

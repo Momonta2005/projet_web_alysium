@@ -88,8 +88,10 @@ try {
             // NOUVELLE LOGIQUE DE SUPPRESSION
             $success = $solutionC->deleteSolution((int)$_POST['solution_id']);
 
-        } elseif ($action === 'add_evaluation' && isset($_POST['solution_id'], $_POST['evaluation_text'])) {
-            $success = $evaluationC->addEvaluation((int)$_POST['solution_id'], $_POST['evaluation_text']);
+        } elseif ($action === 'add_evaluation' && isset($_POST['solution_id'], $_POST['evaluation_rating'])) {
+            $rating = (int)$_POST['evaluation_rating'];
+            $comment = $_POST['evaluation_comment'] ?? '';
+            $success = $evaluationC->addEvaluation((int)$_POST['solution_id'], $rating, $comment);
         }
 
         // Pattern PRG : Redirection après POST pour éviter la resoumission
